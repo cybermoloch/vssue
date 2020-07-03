@@ -116,13 +116,7 @@ export default class GitlabV4 implements VssueAPI.Instance {
    */
   async handleAuth(): Promise<VssueAPI.AccessToken> {
     const hash = parseQuery(window.location.hash.slice(1));
-    if (!hash.access_token) {
-      return null;
-    }
-    const stateobj = JSON.parse(atob(hash.state));
-    if (stateobj == null || stateobj.state !== this.state) {
-      return null;
-    }
+    const stateobj = JSON.parse(atob(hash.state ? hash.state : btoa('{}')));
     const accessToken = hash.access_token;
     const token_type = hash.token_type;
     const expires_in = hash.expires_in;
@@ -136,7 +130,13 @@ export default class GitlabV4 implements VssueAPI.Instance {
       window.location.search
     }${newHash}`;
     window.history.replaceState(null, '', replaceURL);
-    if (stateobj.redirect_uri != null) {
+    if (accessToken == null) {
+      return null;
+    }
+    if (stateobj == null || stateobj.state !== this.state) {
+      return null;
+    }
+    if (stateobj.redirect_uri != null && stateobj.redirect_uri !== '/') {
       const redirect_uri = stateobj.redirect_uri;
       delete stateobj.redirect_uri;
       hash.access_token = accessToken;

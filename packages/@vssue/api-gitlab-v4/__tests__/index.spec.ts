@@ -55,14 +55,19 @@ describe('methods', () => {
     delete window.location;
 
     const url = 'https://vssue.js.org';
-    window.location = { href: url } as any;
+    window.location = { href: url, origin: url } as any;
+    const stateobj = {
+      state: options.state,
+      redirect_uri: window.location.pathname,
+    };
+    const stateobj64 = encodeURIComponent(btoa(JSON.stringify(stateobj)));
     API.redirectAuth();
     expect(window.location.href).toBe(
       `${baseURL}/oauth/authorize?client_id=${
         options.clientId
-      }&redirect_uri=${encodeURIComponent(url)}&response_type=token&state=${
-        options.state
-      }`
+      }&redirect_uri=${encodeURIComponent(
+        url
+      )}&response_type=token&state=${stateobj64}`
     );
 
     // reset `window.location`
@@ -79,26 +84,41 @@ describe('methods', () => {
     });
 
     test('with matched state', async () => {
-      const url = `https://vssue.js.org/#access_token=${mockToken}&state=${options.state}`;
+      const initial_uri = 'https://vssue.js.org/';
+      const stateobj = {
+        state: options.state,
+      };
+      const stateobj64 = encodeURIComponent(btoa(JSON.stringify(stateobj)));
+      const url = `${initial_uri}#access_token=${mockToken}&state=${stateobj64}`;
       window.history.replaceState(null, '', url);
       const token = await API.handleAuth();
-      expect(window.location.href).toBe('https://vssue.js.org/');
+      expect(window.location.href).toBe(initial_uri);
       expect(token).toBe(mockToken);
     });
 
     test('with unmatched state', async () => {
-      const url = `https://vssue.js.org/#access_token=${mockToken}&state=${options.state}-unmatched`;
+      const initial_uri = 'https://vssue.js.org/';
+      const stateobj = {
+        state: `${options.state}-unmatched`,
+      };
+      const stateobj64 = encodeURIComponent(btoa(JSON.stringify(stateobj)));
+      const url = `${initial_uri}#access_token=${mockToken}&state=${stateobj64}`;
       window.history.replaceState(null, '', url);
       const token = await API.handleAuth();
-      expect(window.location.href).toBe(url);
+      expect(window.location.href).toBe(initial_uri);
       expect(token).toBe(null);
     });
 
     test('with extra hash', async () => {
-      const url = `https://vssue.js.org/#access_token=${mockToken}&state=${options.state}&extra=hash`;
+      const initial_uri = 'https://vssue.js.org/';
+      const stateobj = {
+        state: options.state,
+      };
+      const stateobj64 = encodeURIComponent(btoa(JSON.stringify(stateobj)));
+      const url = `https://vssue.js.org/#access_token=${mockToken}&state=${stateobj64}&extra=hash`;
       window.history.replaceState(null, '', url);
       const token = await API.handleAuth();
-      expect(window.location.href).toBe('https://vssue.js.org/#extra=hash');
+      expect(window.location.href).toBe(`${initial_uri}#extra=hash`);
       expect(token).toBe(mockToken);
     });
   });

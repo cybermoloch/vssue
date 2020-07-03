@@ -144,10 +144,9 @@ export default class GitlabV4 implements VssueAPI.Instance {
       hash.expores_in = expires_in;
       hash.state = btoa(JSON.stringify(stateobj));
       const hashString = buildQuery(hash);
-      const newHash = hashString ? `#${hashString}` : '';
       window.location.href = `${getCleanURL(redirect_uri)}${
         window.location.search
-      }${newHash}`;
+      }#${hashString}`;
     }
     return accessToken;
   }

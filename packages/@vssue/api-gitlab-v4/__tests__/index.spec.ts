@@ -121,6 +121,40 @@ describe('methods', () => {
       expect(window.location.href).toBe(`${initial_uri}#extra=hash`);
       expect(token).toBe(mockToken);
     });
+
+    test('with redirect_uri', async () => {
+      // to make `window.location` writable
+      const location = window.location;
+      delete window.location;
+
+      const initial_uri = 'https://vssue.js.org';
+      const stateobj = {
+        state: options.state,
+        redirect_uri: '/deep/path',
+      };
+      const stateobj64 = encodeURIComponent(btoa(JSON.stringify(stateobj)));
+      window.location = {
+        href: '',
+        origin: '',
+        search: '',
+        hash: `#access_token=${mockToken}&state=${stateobj64}&extra=hash`,
+        assign: (a, b, c) => {
+          window.location.href = c;
+        },
+      } as any;
+      const token = await API.handleAuth();
+      delete stateobj.redirect_uri;
+      const stateobj64result = encodeURIComponent(
+        btoa(JSON.stringify(stateobj))
+      );
+      expect(window.location.href).toBe(
+        `/deep/path#extra=hash&access_token=${mockToken}&state=${stateobj64result}`
+      );
+      expect(token).toBe(mockToken);
+
+      // reset `window.location`
+      window.location = location;
+    });
   });
 
   test('getUser', async () => {
